@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>공수달력</title>
+<meta name="theme-color" content="#1565C0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;max-width:480px;margin:0 auto;min-height:100vh;position:relative;color:#222}
+.screen{display:none;min-height:100vh;padding-top:54px}
+.screen.active{display:block}
+
+/* Header */
+.hdr{background:#1565C0;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:54px;z-index:99;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.hdr h1{font-size:17px;font-weight:700}
+.hdr-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600}
+.hdr-nav{display:flex;align-items:center;gap:8px}
+.hdr-nav button{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:2px 8px;line-height:1}
+
+/* Top Nav */
+.bot-nav{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-bottom:2px solid #e0e0e0;display:flex;z-index:100;box-shadow:0 2px 6px rgba(0,0,0,.07)}
+.nav-btn{flex:1;padding:8px 4px 6px;text-align:center;background:none;border:none;cursor:pointer;font-size:10px;color:#aaa;transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-2px}
+.nav-btn.active{color:#1565C0;border-bottom-color:#1565C0}
+.nav-btn .ico{display:block;font-size:20px;margin-bottom:2px}
+
+/* Calendar */
+.wkdays{display:grid;grid-template-columns:repeat(7,1fr);background:#e3f2fd;border-bottom:1px solid #bbdefb}
+.wkd{text-align:center;padding:7px 2px;font-size:10px;font-weight:700;color:#555}
+.wkd:first-child{color:#e53935}
+.wkd:last-child{color:#1565C0}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#ddd}
+.cday{background:#fff;min-height:76px;padding:3px;cursor:pointer;position:relative;transition:background .1s}
+.cday:active{background:#e3f2fd}
+.cday.empty{background:#f5f5f5;cursor:default;min-height:76px}
+.cday.other-month{background:#fafafa}
+.dnum{font-size:11px;font-weight:600;width:20px;height:20px;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+.cday.today .dnum{background:#1565C0;color:#fff;border-radius:50%}
+.cday.sun .dnum{color:#e53935}
+.cday.sat .dnum{color:#1565C0}
+
+.dentry{margin-top:1px}
+.dbadge{background:#1565C0;color:#fff;border-radius:3px;padding:0 3px;font-size:8px;font-weight:700;display:inline-block}
+.dbadge.b2{background:#0288d1}
+.dco{font-size:8px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.damt{font-size:8px;color:#1b5e20;font-weight:700}
+
+/* Month Summary */
+.mo-summary{background:#1565C0;color:#fff;padding:10px 16px;display:flex;gap:20px}
+.mo-summary .item .lbl{font-size:10px;opacity:.8}
+.mo-summary .item .val{font-size:15px;font-weight:700}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:18px 18px 0 0;padding:20px 16px 30px;width:100%;max-height:88vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:700;color:#1565C0;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-title button{background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1}
+
+/* Form */
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:11px;color:#666;margin-bottom:4px;font-weight:600}
+.fi{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:9px;font-size:14px;background:#fff}
+.fi:focus{outline:none;border-color:#1565C0}
+select.fi{background:#fff}
+.fi-row{display:flex;gap:8px}
+.fi-row .fi{flex:1}
+
+.unit-btns{display:flex;gap:6px;flex-wrap:wrap}
+.ubtn{padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:#555}
+.ubtn.on{background:#1565C0;color:#fff;border-color:#1565C0}
+
+/* Buttons */
+.btn{padding:12px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:700;width:100%;margin-top:6px}
+.btn-p{background:#1565C0;color:#fff}
+.btn-p:active{background:#0d47a1}
+.btn-s{background:#f5f5f5;color:#444}
+.btn-d{background:#ffebee;color:#c62828}
+.btn-sm{width:auto;padding:7px 14px;font-size:12px;margin-top:0}
+
+.sep{border:none;border-top:1px solid #eee;margin:12px 0}
+.entry-box{background:#f0f4f8;border-radius:10px;padding:12px;margin-bottom:10px;position:relative}
+.entry-box .rm{position:absolute;top:8px;right:8px;background:#ffebee;color:#c62828;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:600}
+.entry-num{font-size:11px;font-weight:700;color:#1565C0;margin-bottom:8px}
+
+/* Settlement */
+.settle-wrap{padding:12px 12px 20px}
+.co-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.co-card-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.co-nm{font-size:16px;font-weight:700;color:#1565C0}
+.co-period{font-size:11px;color:#888;margin-top:2px}
+.tax-block{background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:8px}
+.tax-title{font-size:11px;color:#888;font-weight:600;margin-bottom:6px}
+.tax-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0}
+.tax-row .k{font-size:12px;color:#555}
+.tax-row .v{font-size:12px;font-weight:600}
+.tax-row.big .k{font-size:13px;color:#333;font-weight:600}
+.tax-row.big .v{font-size:14px;color:#1b5e20;font-weight:700}
+.tax-row.deduct .v{color:#e53935}
+.tax-divider{border:none;border-top:1px solid #e0e0e0;margin:4px 0}
+.rule-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-bottom:8px}
+.rule-legal{background:#e8f5e9;color:#2e7d32}
+.rule-gabgun{background:#fff3e0;color:#e65100}
+
+.actual-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+.actual-row input{flex:1;padding:9px 11px;border:1.5px solid #ddd;border-radius:9px;font-size:13px}
+.actual-row input:focus{outline:none;border-color:#1565C0}
+.diff-chip{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;margin-top:6px}
+.diff-pos{background:#e8f5e9;color:#2e7d32}
+.diff-neg{background:#ffebee;color:#c62828}
+.diff-zero{background:#f5f5f5;color:#666}
+
+.period-tab{display:flex;gap:6px;margin-bottom:12px}
+.ptab{padding:6px 14px;border-radius:20px;border:1.5px solid #ddd;background:#fff;font-size:12px;font-weight:600;color:#666;cursor:pointer}
+.ptab.on{background:#1565C0;color:#fff;border-color:#1565C0}
+
+.entries-list{margin-bottom:8px}
+.elist-item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:12px}
+.elist-item:last-child{border-bottom:none}
+.elist-date{color:#888}
+.elist-amt{font-weight:600;color:#1b5e20}
+
+/* Companies */
+.co-list{padding:12px 12px 20px}
+.co-item{background:#fff;border-radius:12px;padding:13px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.co-item-info .nm{font-size:15px;font-weight:700}
+.co-item-info .detail{font-size:11px;color:#888;margin-top:3px}
+.co-item-btns{display:flex;gap:6px}
+.ico-btn{background:#f5f5f5;border:none;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:13px}
+.ico-btn.red{background:#ffebee}
+
+/* Today button */
+.today-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:5px 10px;border-radius:14px;cursor:pointer;font-size:11px;font-weight:700}
+
+/* Amount preview */
+.amt-preview{font-size:14px;font-weight:700;color:#1b5e20;padding:4px 2px;min-height:20px}
+
+/* Line chart in yearly view */
+.yr-chart-wrap{background:#fff;padding:16px 12px 8px;border-bottom:1px solid #eee}
+.yr-chart-title{font-size:12px;font-weight:700;color:#555;margin-bottom:10px}
+.yr-chart-wrap svg{display:block;width:100%;overflow:visible}
+
+/* Backup section */
+.backup-section{margin:20px 12px 8px;background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.backup-title{font-size:13px;font-weight:700;color:#555;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
+.backup-btn{display:flex;align-items:center;gap:10px;width:100%;background:#f8f9fa;border:1.5px solid #e8e8e8;border-radius:10px;padding:12px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#333;margin-bottom:8px;text-align:left}
+.backup-btn:active{background:#e8e8e8}
+.backup-btn .bico{font-size:20px;width:24px;text-align:center}
+.backup-btn .bdesc{font-size:10px;color:#888;font-weight:400;display:block;margin-top:1px}
+.backup-btn.restore{border-color:#bbdefb;background:#e3f2fd}
+.backup-btn.restore .bico{color:#1565C0}
+.empty{text-align:center;padding:40px 20px;color:#aaa}
+.empty .ei{font-size:48px;margin-bottom:10px}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#333;color:#fff;padding:10px 22px;border-radius:22px;font-size:13px;z-index:999;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Yearly view */
+.yr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
+.yr-cell{background:#fff;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:all .15s;border:2px solid transparent}
+.yr-cell:active{transform:scale(.96)}
+.yr-cell.cur-month{border-color:#1565C0;background:#e3f2fd}
+.yr-cell.has-data{background:#f0f7ff}
+.yr-cell .ym{font-size:15px;font-weight:700;color:#333;margin-bottom:6px}
+.yr-cell.cur-month .ym{color:#1565C0}
+.yr-cell .yu{font-size:11px;color:#1565C0;font-weight:600}
+.yr-cell .ya{font-size:11px;color:#1b5e20;font-weight:700;margin-top:2px}
+.yr-cell .yempty{font-size:11px;color:#ccc}
+.yr-summary{background:#1565C0;color:#fff;padding:12px 16px;display:flex;gap:20px}
+.yr-summary .item .lbl{font-size:10px;opacity:.8}
+.yr-summary .item .val{font-size:15px;font-weight:700}
+.yr-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px;background:#fff;border-bottom:1px solid #eee}
+.yr-nav button{background:none;border:none;font-size:22px;cursor:pointer;color:#1565C0;padding:2px 10px}
+.yr-nav span{font-size:16px;font-weight:700;color:#333}
+
+/* Section label in settlement */
+.settle-period-label{font-size:12px;font-weight:700;color:#666;margin-bottom:8px;padding:0 2px}
+.no-entries{text-align:center;padding:14px;color:#aaa;font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="bot-nav">
+  <button class="nav-btn active" onclick="showTab('cal')" id="nav-cal">
+    <span class="ico">📅</span>달력
+  </button>
+  <button class="nav-btn" onclick="showTab('settle')" id="nav-settle">
+    <span class="ico">💰</span>정산
+  </button>
+  <button class="nav-btn" onclick="showTab('co')" id="nav-co">
+    <span class="ico">🏢</span>회사
+  </button>
+</nav>
+
+<!-- CALENDAR SCREEN -->
+<div id="sc-cal" class="screen active">
+  <div class="hdr">
+    <div class="hdr-nav">
+      <button id="hdr-prev" onclick="prevMonth()">‹</button>
+      <h1 id="mo-title"></h1>
+      <button id="hdr-next" onclick="nextMonth()">›</button>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="today-btn" onclick="goToday()">오늘</button>
+      <button class="hdr-btn" id="yr-toggle-btn" onclick="toggleYearView()">연간</button>
+    </div>
+  </div>
+
+  <!-- 월별 뷰 -->
+  <div id="monthly-view">
+    <div class="wkdays">
+      <div class="wkd">일</div><div class="wkd">월</div><div class="wkd">화</div>
+      <div class="wkd">수</div><div class="wkd">목</div><div class="wkd">금</div><div class="wkd">토</div>
+    </div>
+    <div id="cal-grid" class="cal-grid"></div>
+    <div id="mo-summary" class="mo-summary"></div>
+  </div>
+
+  <!-- 연간 뷰 -->
+  <div id="yearly-view" style="display:none">
+    <div class="yr-nav">
+      <button onclick="prevYear()">‹</button>
+      <span id="yr-title"></span>
+      <button onclick="nextYear()">›</button>
+    </div>
+    <div id="yr-chart" class="yr-chart-wrap"></div>
+    <div id="yr-grid" class="yr-grid"></div>
+    <div id="yr-summary" class="yr-summary"></div>
+  </div>
+</div>
+
+<!-- SETTLEMENT SCREEN -->
+<div id="sc-settle" class="screen">
+  <div class="hdr"><h1>정산</h1></div>
+  <div id="settle-content" class="settle-wrap"></div>
+</div>
+
+<!-- COMPANIES SCREEN -->
+<div id="sc-co" class="screen">
+  <div class="hdr">
+    <h1>회사 관리</h1>
+    <button class="hdr-btn" onclick="openCoModal(null)">+ 추가</button>
+  </div>
+  <div id="co-list" class="co-list"></div>
+
+  <div class="backup-section">
+    <div class="backup-title">📂 백업 & 복원</div>
+    <button class="backup-btn" onclick="backupJSON()">
+      <span class="bico">📦</span>
+      <span>앱 백업 (JSON)<span class="bdesc">복원용 · 카톡 나에게 보내기로 보관하세요</span></span>
+    </button>
+    <button class="backup-btn" onclick="exportCSV()">
+      <span class="bico">📊</span>
+      <span>엑셀용 내보내기 (CSV)<span class="bdesc">노트북에서 열어 데이터 분석 가능</span></span>
+    </button>
+    <button class="backup-btn restore" onclick="restoreJSON()">
+      <span class="bico">📥</span>
+      <span>백업 파일로 복원<span class="bdesc">다운로드 폴더에서 JSON 파일 선택하세요</span></span>
+    </button>
+  </div>
+</div>
+
+<!-- DAY MODAL -->
+<div id="day-modal" class="overlay" onclick="overlayClose(event,'day-modal')">
+<div class="modal">
+  <div class="modal-title">
+    <span id="dm-title"></span>
+    <button onclick="closeModal('day-modal')">✕</button>
+  </div>
+  <div id="dm-entries"></div>
+  <div id="dm-add-btn"></div>
+  <hr class="sep">
+  <button class="btn btn-p" onclick="saveDayEntries()">저장</button>
+  <button class="btn btn-d" id="dm-delete-btn" style="display:none" onclick="deleteDayEntries()">이 날 기록 삭제</button>
+</div>
+</div>
+
+<!-- COMPANY MODAL -->
+<div id="co-modal" class="overlay" onclick="overlayClose(event,'co-modal')">
+<div class="modal">
+  <div class="modal-title">
+    <span id="com-title">회사 추가</span>
+    <button onclick="closeModal('co-modal')">✕</button>
+  </div>
+  <div class="fg">
+    <label>회사 이름</label>
+    <input class="fi" id="co-name" placeholder="예: 광혁건설">
+  </div>
+  <div class="fg">
+    <label>줄임말 (달력에 표시)</label>
+    <input class="fi" id="co-short" placeholder="예: 광혁">
+  </div>
+  <hr class="sep">
+  <div class="fg">
+    <label>정산 기간 (매월 며칠 ~ 며칠)</label>
+    <div class="fi-row">
+      <input class="fi" id="co-s-start" type="number" min="1" max="31" placeholder="시작일">
+      <span style="align-self:center;color:#888">~</span>
+      <input class="fi" id="co-s-end" type="number" min="1" max="31" placeholder="종료일">
+    </div>
+    <div style="font-size:11px;color:#888;margin-top:4px">예: 21 ~ 20 (21일부터 다음달 20일)</div>
+  </div>
+  <div class="fg">
+    <label>지급일</label>
+    <div class="fi-row">
+      <select class="fi" id="co-pay-offset">
+        <option value="0">정산 종료월</option>
+        <option value="1">그 다음달</option>
+        <option value="2">두 달 후</option>
+      </select>
+      <input class="fi" id="co-pay-day" type="number" min="1" max="31" placeholder="지급일">
+    </div>
+    <div style="font-size:11px;color:#888;margin-top:4px">예: 21~20 정산 → 다음달 → 20일 = 다음달 20일 지급</div>
+  </div>
+  <hr class="sep">
+  <div class="fg">
+    <label>4대보험 적용</label>
+    <select class="fi" id="co-ins">
+      <option value="1">적용 (법정 공제 있음)</option>
+      <option value="0">미적용 (갑근세만)</option>
+    </select>
+  </div>
+  <div id="ins-fields">
+    <div class="fg">
+      <label>국민연금 (%)</label>
+      <input class="fi" id="co-pension" type="number" step="0.001" value="4.5">
+    </div>
+    <div class="fg">
+      <label>건강보험 (%)</label>
+      <input class="fi" id="co-health" type="number" step="0.001" value="3.545">
+    </div>
+    <div class="fg">
+      <label>장기요양보험 (건강보험료의 %)</label>
+      <input class="fi" id="co-longterm" type="number" step="0.001" value="12.95">
+    </div>
+    <div class="fg">
+      <label>고용보험 (%)</label>
+      <input class="fi" id="co-emp" type="number" step="0.001" value="0.9">
+    </div>
+  </div>
+  <hr class="sep">
+  <button class="btn btn-p" onclick="saveCompany()">저장</button>
+  <button class="btn btn-d" id="co-del-btn" style="display:none" onclick="deleteCompany()">회사 삭제</button>
+</div>
+</div>
+
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ===================== DATA =====================
+const K = {co:'gco', wd:'gwd', py:'gpy'};
+function load(k){ return JSON.parse(localStorage.getItem(k) || (k===K.wd?'{}':'[]')); }
+function save(k,d){ localStorage.setItem(k, JSON.stringify(d)); }
+
+function companies(){ return load(K.co); }
+function workdays(){ return load(K.wd); }
+function payments(){ return load(K.py); }
+function saveCompanies(d){ save(K.co,d); }
+function saveWorkdays(d){ save(K.wd,d); }
+function savePayments(d){ save(K.py,d); }
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
+function fmtDate(d){ return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; }
+function p2(n){ return String(n).padStart(2,'0'); }
+function parseDate(s){ const[y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function today(){ return fmtDate(new Date()); }
+function addMonths(d,n){ const r=new Date(d); r.setMonth(r.getMonth()+n); return r; }
+
+function getCo(id){ return companies().find(c=>c.id===id)||null; }
+
+// ===================== TAX =====================
+function calcTax(entries, co){
+  let gross=0, units=0, gabgunse=0;
+  for(const e of entries){
+    gross += e.amount;
+    units += e.units;
+    const daily = e.amount / e.units;
+    const taxablePerDay = Math.max(0, daily - 150000);
+    const gPerDay = taxablePerDay * 0.027 * 1.1; // 소득세 2.7% + 지방소득세 10%
+    gabgunse += gPerDay * e.units;
+  }
+  gabgunse = Math.floor(gabgunse);
+
+  const pension    = co.ins ? Math.floor(gross * co.pension/100) : 0;
+  const health     = co.ins ? Math.floor(gross * co.health/100) : 0;
+  const longterm   = co.ins ? Math.floor(health * co.longterm/100) : 0;
+  const emp        = co.ins ? Math.floor(gross * co.emp/100) : 0;
+  const legalTotal = pension + health + longterm + emp;
+
+  return {
+    gross, units, gabgunse,
+    afterGab: gross - gabgunse,
+    afterLegal: gross - gabgunse - legalTotal,
+    pension, health, longterm, emp, legalTotal,
+    isGabOnly: units <= 8.5
+  };
+}
+
+// ===================== PERIOD =====================
+function getPeriods(co, refDate){
+  const ref = refDate || new Date();
+  const y = ref.getFullYear(), m = ref.getMonth(), d = ref.getDate();
+  const s = co.settlementStart, e = co.settlementEnd;
+
+  let curStart, curEnd;
+  if(s <= e){
+    // same month
+    curStart = new Date(y,m,s);
+    curEnd   = new Date(y,m,e);
+    if(d < s){
+      curStart = new Date(y,m-1,s);
+      curEnd   = new Date(y,m-1,e);
+    }
+  } else {
+    // crosses month (e.g. 21~20)
+    if(d >= s){
+      curStart = new Date(y,m,s);
+      curEnd   = new Date(y,m+1,e);
+    } else {
+      curStart = new Date(y,m-1,s);
+      curEnd   = new Date(y,m,e);
+    }
+  }
+
+  // prev period: go back one period from curStart
+  let prevStart, prevEnd;
+  if(s <= e){
+    prevStart = new Date(curStart); prevStart.setMonth(prevStart.getMonth()-1);
+    prevEnd   = new Date(curEnd);   prevEnd.setMonth(prevEnd.getMonth()-1);
+  } else {
+    prevStart = new Date(curStart); prevStart.setMonth(prevStart.getMonth()-1);
+    prevEnd   = new Date(curEnd);   prevEnd.setMonth(prevEnd.getMonth()-1);
+  }
+
+  return { cur:{start:curStart,end:curEnd}, prev:{start:prevStart,end:prevEnd} };
+}
+
+function getPayDate(co, periodEnd){
+  const pm = periodEnd.getMonth() + Number(co.payOffset);
+  const py = periodEnd.getFullYear() + Math.floor(pm/12);
+  return new Date(py, pm%12, co.payDay);
+}
+
+function getEntriesForPeriod(coId, start, end){
+  const wd = workdays();
+  const res = [];
+  for(const [ds, day] of Object.entries(wd)){
+    const dt = parseDate(ds);
+    if(dt >= start && dt <= end){
+      for(const item of (day.items||[])){
+        if(item.companyId === coId) res.push({date:ds, ...item});
+      }
+    }
+  }
+  return res.sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function payKey(coId, start, end){
+  return `${coId}_${fmtDate(start)}_${fmtDate(end)}`;
+}
+
+// ===================== UI STATE =====================
+let curYear = new Date().getFullYear();
+let curMon  = new Date().getMonth();
+let editCoId = null;
+let dmDate  = null;
+let dmEntries = [];
+
+// ===================== NAV =====================
+function showTab(t){
+  ['cal','settle','co'].forEach(id=>{
+    document.getElementById('sc-'+id).classList.toggle('active', id===t);
+    document.getElementById('nav-'+id).classList.toggle('active', id===t);
+  });
+  if(t==='settle') renderSettle();
+  if(t==='co') renderCo();
+}
+
+// ===================== CALENDAR =====================
+function prevMonth(){ curMon--; if(curMon<0){curMon=11;curYear--;} renderCal(); }
+function nextMonth(){ curMon++; if(curMon>11){curMon=0;curYear++;} renderCal(); }
+
+function renderCal(){
+  const wd = workdays();
+  const todayStr = today();
+  document.getElementById('mo-title').textContent = `${curYear}년 ${curMon+1}월`;
+
+  const first = new Date(curYear, curMon, 1);
+  const last  = new Date(curYear, curMon+1, 0);
+  const startDow = first.getDay();
+
+  let html = '';
+  // empty cells before first day
+  for(let i=0;i<startDow;i++) html += '<div class="cday empty"></div>';
+
+  let totalGross=0, totalUnits=0;
+
+  for(let d=1;d<=last.getDate();d++){
+    const ds = `${curYear}-${p2(curMon+1)}-${p2(d)}`;
+    const dow = new Date(curYear,curMon,d).getDay();
+    const isToday = ds===todayStr;
+    const dayData = wd[ds];
+    const items = dayData?.items||[];
+
+    let cls = 'cday';
+    if(isToday) cls+=' today';
+    if(dow===0) cls+=' sun';
+    if(dow===6) cls+=' sat';
+
+    let innerHtml = `<div class="dnum">${d}</div><div class="dentry">`;
+    for(let i=0;i<items.length&&i<2;i++){
+      const it = items[i];
+      const co = getCo(it.companyId);
+      const nm = co?co.short:'?';
+      const badge = i===0?'dbadge':'dbadge b2';
+      innerHtml += `<div><span class="${badge}">${it.units}</span><span class="dco"> ${nm}</span></div>`;
+      innerHtml += `<div class="damt">${fmt(it.amount)}</div>`;
+      totalGross += it.amount;
+      totalUnits += it.units;
+    }
+    innerHtml += '</div>';
+
+    html += `<div class="${cls}" onclick="openDayModal('${ds}')">${innerHtml}</div>`;
+  }
+
+  // fill remainder
+  const totalCells = startDow + last.getDate();
+  const rem = totalCells % 7 === 0 ? 0 : 7 - (totalCells%7);
+  for(let i=0;i<rem;i++) html += '<div class="cday empty"></div>';
+
+  document.getElementById('cal-grid').innerHTML = html;
+  document.getElementById('mo-summary').innerHTML = `
+    <div class="item"><div class="lbl">이번달 공수</div><div class="val">${totalUnits.toFixed(1)}</div></div>
+    <div class="item"><div class="lbl">이번달 합계</div><div class="val">${fmt(totalGross)}원</div></div>
+  `;
+}
+
+// ===================== DAY MODAL =====================
+function openDayModal(ds){
+  dmDate = ds;
+  const wd = workdays();
+  const dayData = wd[ds];
+  dmEntries = dayData ? JSON.parse(JSON.stringify(dayData.items||[])) : [];
+
+  const [y,m,d] = ds.split('-');
+  document.getElementById('dm-title').textContent = `${y}년 ${+m}월 ${+d}일`;
+  document.getElementById('dm-delete-btn').style.display = dayData ? 'block' : 'none';
+
+  renderDmEntries();
+  document.getElementById('day-modal').classList.add('open');
+}
+
+function renderDmEntries(){
+  const cos = companies();
+  const coOpts = cos.map(c=>`<option value="${c.id}">${c.short} (${c.name})</option>`).join('');
+  if(!coOpts){
+    document.getElementById('dm-entries').innerHTML = `
+      <div style="text-align:center;padding:24px 12px">
+        <div style="font-size:32px;margin-bottom:10px">🏢</div>
+        <div style="font-size:14px;color:#888;margin-bottom:16px">먼저 회사를 등록해야 해요</div>
+        <button class="btn btn-p" style="max-width:200px;margin:0 auto" onclick="closeModal('day-modal');showTab('co')">회사 등록하러 가기</button>
+      </div>`;
+    document.getElementById('dm-add-btn').innerHTML = '';
+    return;
+  }
+
+  const unitOpts = [0.5,1.0,1.5,2.0];
+  let html = '';
+  for(let i=0;i<dmEntries.length;i++){
+    const e = dmEntries[i];
+    const unitBtns = unitOpts.map(u=>
+      `<button class="ubtn${e.units===u?' on':''}" onclick="setUnit(${i},${u})">${u}</button>`
+    ).join('');
+    html += `<div class="entry-box">
+      <div class="entry-num">근무 ${i+1}</div>
+      <button class="rm" onclick="removeEntry(${i})">✕ 삭제</button>
+      <div class="fg">
+        <label>회사</label>
+        <select class="fi" onchange="dmEntries[${i}].companyId=this.value">
+          <option value="">-- 선택 --</option>${coOpts}
+        </select>
+      </div>
+      <div class="fg">
+        <label>공수</label>
+        <div class="unit-btns">${unitBtns}
+          <input class="fi" id="unit-custom-${i}" type="number" step="0.5" min="0.5" max="4"
+            placeholder="직접" style="width:70px;padding:7px 8px;font-size:13px"
+            oninput="setUnit(${i},parseFloat(this.value)||0)">
+        </div>
+      </div>
+      <div class="fg">
+        <label>금액 (원)</label>
+        <input class="fi" type="number" value="${e.amount||''}" placeholder="0"
+          oninput="dmEntries[${i}].amount=Number(this.value);showAmtPreview(${i},this.value)">
+        <div class="amt-preview" id="amt-prev-${i}">${e.amount?fmt(e.amount)+'원':''}</div>
+      </div>
+      <div class="fg">
+        <label>작업 내용</label>
+        <input class="fi" value="${e.note||''}" placeholder="예: 철근 작업"
+          oninput="dmEntries[${i}].note=this.value">
+      </div>
+    </div>`;
+  }
+  document.getElementById('dm-entries').innerHTML = html;
+
+  // re-set select values
+  for(let i=0;i<dmEntries.length;i++){
+    const sel = document.getElementById('dm-entries').querySelectorAll('select')[i];
+    if(sel && dmEntries[i].companyId) sel.value = dmEntries[i].companyId;
+  }
+
+  const addBtn = dmEntries.length < 2
+    ? `<button class="btn btn-s" onclick="addEntry()">+ 근무 추가</button>`
+    : '';
+  document.getElementById('dm-add-btn').innerHTML = addBtn;
+}
+
+function setUnit(idx, val){
+  dmEntries[idx].units = val;
+  // update button highlights only
+  const box = document.getElementById('dm-entries').querySelectorAll('.entry-box')[idx];
+  if(!box) return;
+  box.querySelectorAll('.ubtn').forEach(b=>{
+    b.classList.toggle('on', parseFloat(b.textContent)===val);
+  });
+}
+
+function addEntry(){
+  if(dmEntries.length>=2) return;
+  dmEntries.push({companyId:'',units:1.0,amount:0,note:''});
+  renderDmEntries();
+}
+
+function removeEntry(i){
+  dmEntries.splice(i,1);
+  if(dmEntries.length===0) dmEntries.push({companyId:'',units:1.0,amount:0,note:''});
+  renderDmEntries();
+}
+
+function saveDayEntries(){
+  // validate
+  for(const e of dmEntries){
+    if(!e.companyId){ showToast('회사를 선택해주세요'); return; }
+    if(!e.units||e.units<=0){ showToast('공수를 입력해주세요'); return; }
+    if(!e.amount||e.amount<=0){ showToast('금액을 입력해주세요'); return; }
+  }
+  const wd = workdays();
+  if(dmEntries.length===0){
+    delete wd[dmDate];
+  } else {
+    wd[dmDate] = {items: dmEntries};
+  }
+  saveWorkdays(wd);
+  closeModal('day-modal');
+  renderCal();
+  showToast('저장되었습니다');
+}
+
+function deleteDayEntries(){
+  if(!confirm('이 날 기록을 삭제할까요?')) return;
+  const wd = workdays();
+  delete wd[dmDate];
+  saveWorkdays(wd);
+  closeModal('day-modal');
+  renderCal();
+  showToast('삭제되었습니다');
+}
+
+// ===================== SETTLEMENT =====================
+let settlePeriod = 'cur'; // 'cur' or 'prev'
+
+function renderSettle(){
+  const cos = companies();
+  const el = document.getElementById('settle-content');
+
+  if(!cos.length){
+    el.innerHTML = '<div class="empty"><div class="ei">🏢</div><div>등록된 회사가 없어요<br>회사 탭에서 먼저 추가해주세요</div></div>';
+    return;
+  }
+
+  let html = `<div class="period-tab">
+    <button class="ptab ${settlePeriod==='cur'?'on':''}" onclick="setSettlePeriod('cur')">이번 정산</button>
+    <button class="ptab ${settlePeriod==='prev'?'on':''}" onclick="setSettlePeriod('prev')">지난 정산</button>
+  </div>`;
+
+  const py = payments();
+
+  for(const co of cos){
+    const periods = getPeriods(co);
+    const period = settlePeriod==='cur' ? periods.cur : periods.prev;
+    const entries = getEntriesForPeriod(co.id, period.start, period.end);
+    const payDate = getPayDate(co, period.end);
+    const pkey = payKey(co.id, period.start, period.end);
+    const actualAmt = py[pkey] !== undefined ? py[pkey] : '';
+
+    const periodStr = `${fmtDate(period.start)} ~ ${fmtDate(period.end)}`;
+    const payDateStr = `지급예정: ${fmtDate(payDate)}`;
+
+    if(!entries.length){
+      html += `<div class="co-card">
+        <div class="co-card-hd">
+          <div><div class="co-nm">${co.name}</div><div class="co-period">${periodStr}</div><div class="co-period">${payDateStr}</div></div>
+        </div>
+        <div class="no-entries">이 기간에 근무 기록이 없어요</div>
+      </div>`;
+      continue;
+    }
+
+    const tax = calcTax(entries, co);
+    const ruleBadge = tax.isGabOnly
+      ? `<span class="rule-badge rule-gabgun">공수 ${tax.units.toFixed(1)}일 — 갑근세만 해당</span>`
+      : `<span class="rule-badge rule-legal">공수 ${tax.units.toFixed(1)}일 — 법정 적용 가능</span>`;
+
+    // entries list
+    let elistHtml = '<div class="entries-list">';
+    for(const e of entries){
+      const enco = getCo(e.companyId);
+      elistHtml += `<div class="elist-item">
+        <span class="elist-date">${e.date.slice(5)} ${enco?enco.short:''} ${e.units}공수${e.note?' · '+e.note:''}</span>
+        <span class="elist-amt">${fmt(e.amount)}원</span>
+      </div>`;
+    }
+    elistHtml += '</div>';
+
+    // tax table
+    let taxHtml = '';
+
+    taxHtml += `<div class="tax-block">
+      <div class="tax-title">💵 세전 (공제 없음)</div>
+      <div class="tax-row big"><span class="k">수령액</span><span class="v">${fmt(tax.gross)}원</span></div>
+    </div>`;
+
+    taxHtml += `<div class="tax-block">
+      <div class="tax-title">📄 갑근세만 공제</div>
+      <div class="tax-row deduct"><span class="k">소득세+지방세</span><span class="v">-${fmt(tax.gabgunse)}원</span></div>
+      <hr class="tax-divider">
+      <div class="tax-row big"><span class="k">실수령액</span><span class="v">${fmt(tax.afterGab)}원</span></div>
+    </div>`;
+
+    if(co.ins){
+      taxHtml += `<div class="tax-block">
+        <div class="tax-title">🏛️ 법정 공제 (4대보험+갑근세)</div>
+        <div class="tax-row deduct"><span class="k">소득세+지방세</span><span class="v">-${fmt(tax.gabgunse)}원</span></div>
+        <div class="tax-row deduct"><span class="k">국민연금 ${co.pension}%</span><span class="v">-${fmt(tax.pension)}원</span></div>
+        <div class="tax-row deduct"><span class="k">건강보험 ${co.health}%</span><span class="v">-${fmt(tax.health)}원</span></div>
+        <div class="tax-row deduct"><span class="k">장기요양 ${co.longterm}%</span><span class="v">-${fmt(tax.longterm)}원</span></div>
+        <div class="tax-row deduct"><span class="k">고용보험 ${co.emp}%</span><span class="v">-${fmt(tax.emp)}원</span></div>
+        <hr class="tax-divider">
+        <div class="tax-row big"><span class="k">실수령액</span><span class="v">${fmt(tax.afterLegal)}원</span></div>
+      </div>`;
+    } else {
+      taxHtml += `<div class="tax-block" style="background:#fff3e0">
+        <div class="tax-row"><span class="k" style="color:#888">4대보험</span><span class="v" style="color:#888">미적용 회사</span></div>
+      </div>`;
+    }
+
+    const safeKey = pkey.replace(/\W/g,'_');
+    const initDiff = actualAmt !== '' ? makeDiffHtml(Number(actualAmt), tax.afterGab) : '';
+
+    html += `<div class="co-card">
+      <div class="co-card-hd">
+        <div><div class="co-nm">${co.name}</div><div class="co-period">${periodStr}</div><div class="co-period">${payDateStr}</div></div>
+      </div>
+      ${ruleBadge}
+      ${elistHtml}
+      ${taxHtml}
+      <div style="font-size:12px;font-weight:700;color:#555;margin-top:10px">실제 받은 금액</div>
+      <div class="actual-row">
+        <input type="number" placeholder="입력하세요 (원)" value="${actualAmt}"
+          oninput="saveActual('${pkey}','${safeKey}',${tax.afterGab},this.value)">
+        <span style="font-size:12px;color:#888">원</span>
+      </div>
+      <div id="diff_${safeKey}">${initDiff}</div>
+    </div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+function setSettlePeriod(p){
+  settlePeriod = p;
+  renderSettle();
+}
+
+function makeDiffHtml(actual, afterGab){
+  const diff = actual - afterGab;
+  const cls = diff>0?'diff-pos':diff<0?'diff-neg':'diff-zero';
+  const sign = diff>0?'+':'';
+  return `<div class="diff-chip ${cls}">갑근세 기준 차이: ${sign}${fmt(diff)}원</div>`;
+}
+
+function saveActual(pkey, safeKey, afterGab, val){
+  const py = payments();
+  if(val===''){ delete py[pkey]; }
+  else { py[pkey] = Number(val); }
+  savePayments(py);
+  const el = document.getElementById('diff_'+safeKey);
+  if(el) el.innerHTML = val ? makeDiffHtml(Number(val), afterGab) : '';
+}
+
+function showAmtPreview(idx, val){
+  const el = document.getElementById('amt-prev-'+idx);
+  if(el) el.textContent = val && Number(val)>0 ? fmt(Number(val))+'원' : '';
+}
+
+// ===================== COMPANIES =====================
+function renderCo(){
+  const cos = companies();
+  if(!cos.length){
+    document.getElementById('co-list').innerHTML = '<div class="empty"><div class="ei">🏢</div><div>등록된 회사가 없어요<br>위의 + 추가 버튼을 눌러주세요</div></div>';
+    return;
+  }
+  let html = '';
+  for(const co of cos){
+    html += `<div class="co-item">
+      <div class="co-item-info">
+        <div class="nm">${co.name} <span style="color:#888;font-size:12px">(${co.short})</span></div>
+        <div class="detail">정산: 매월 ${co.settlementStart}일~${co.settlementEnd}일 / 지급: ${['같은달','다음달','두달후'][co.payOffset]} ${co.payDay}일</div>
+        <div class="detail">${co.ins?`4대보험 적용 (국민연금${co.pension}% 건강${co.health}%)`:'4대보험 미적용'}</div>
+      </div>
+      <div class="co-item-btns">
+        <button class="ico-btn" onclick="openCoModal('${co.id}')">✏️</button>
+      </div>
+    </div>`;
+  }
+  document.getElementById('co-list').innerHTML = html;
+}
+
+function openCoModal(coId){
+  editCoId = coId;
+  document.getElementById('com-title').textContent = coId ? '회사 수정' : '회사 추가';
+  document.getElementById('co-del-btn').style.display = coId ? 'block' : 'none';
+
+  if(coId){
+    const co = getCo(coId);
+    if(co){
+      document.getElementById('co-name').value = co.name;
+      document.getElementById('co-short').value = co.short;
+      document.getElementById('co-s-start').value = co.settlementStart;
+      document.getElementById('co-s-end').value = co.settlementEnd;
+      document.getElementById('co-pay-offset').value = co.payOffset;
+      document.getElementById('co-pay-day').value = co.payDay;
+      document.getElementById('co-ins').value = co.ins?'1':'0';
+      document.getElementById('co-pension').value = co.pension;
+      document.getElementById('co-health').value = co.health;
+      document.getElementById('co-longterm').value = co.longterm;
+      document.getElementById('co-emp').value = co.emp;
+    }
+  } else {
+    document.getElementById('co-name').value = '';
+    document.getElementById('co-short').value = '';
+    document.getElementById('co-s-start').value = 1;
+    document.getElementById('co-s-end').value = 31;
+    document.getElementById('co-pay-offset').value = 1;
+    document.getElementById('co-pay-day').value = 10;
+    document.getElementById('co-ins').value = '1';
+    document.getElementById('co-pension').value = 4.5;
+    document.getElementById('co-health').value = 3.545;
+    document.getElementById('co-longterm').value = 12.95;
+    document.getElementById('co-emp').value = 0.9;
+  }
+  toggleInsFields();
+  document.getElementById('co-modal').classList.add('open');
+}
+
+function toggleInsFields(){
+  const show = document.getElementById('co-ins').value==='1';
+  document.getElementById('ins-fields').style.display = show?'block':'none';
+}
+
+document.getElementById('co-ins').addEventListener('change', toggleInsFields);
+
+function saveCompany(){
+  const name = document.getElementById('co-name').value.trim();
+  const short = document.getElementById('co-short').value.trim();
+  if(!name||!short){ showToast('회사 이름과 줄임말을 입력해주세요'); return; }
+
+  const sStart = parseInt(document.getElementById('co-s-start').value)||1;
+  const sEnd   = parseInt(document.getElementById('co-s-end').value)||31;
+  const payOffset = parseInt(document.getElementById('co-pay-offset').value)||1;
+  const payDay = parseInt(document.getElementById('co-pay-day').value)||10;
+  const ins = document.getElementById('co-ins').value==='1';
+
+  const co = {
+    id: editCoId || uid(),
+    name, short,
+    settlementStart: sStart,
+    settlementEnd: sEnd,
+    payOffset, payDay, ins,
+    pension: parseFloat(document.getElementById('co-pension').value)||4.5,
+    health:  parseFloat(document.getElementById('co-health').value)||3.545,
+    longterm:parseFloat(document.getElementById('co-longterm').value)||12.95,
+    emp:     parseFloat(document.getElementById('co-emp').value)||0.9,
+  };
+
+  const cos = companies();
+  if(editCoId){
+    const i = cos.findIndex(c=>c.id===editCoId);
+    if(i>=0) cos[i]=co; else cos.push(co);
+  } else {
+    cos.push(co);
+  }
+  saveCompanies(cos);
+  closeModal('co-modal');
+  renderCo();
+  showToast('저장되었습니다');
+}
+
+function deleteCompany(){
+  if(!editCoId) return;
+  const co = getCo(editCoId);
+  if(!confirm(`"${co?.name}" 회사를 삭제할까요?`)) return;
+  const cos = companies().filter(c=>c.id!==editCoId);
+  saveCompanies(cos);
+  closeModal('co-modal');
+  renderCo();
+  showToast('삭제되었습니다');
+}
+
+// ===================== MODAL UTILS =====================
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function overlayClose(e, id){ if(e.target===document.getElementById(id)) closeModal(id); }
+
+// ===================== TOAST =====================
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2000);
+}
+
+// ===================== BACKUP & RESTORE =====================
+function backupJSON(){
+  const data = {
+    version: 1,
+    exportDate: today(),
+    companies: companies(),
+    workdays: workdays(),
+    payments: payments()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  downloadBlob(blob, `공수달력_백업_${today().replace(/-/g,'')}.json`);
+  showToast('백업 파일이 저장됐어요 📦');
+}
+
+function exportCSV(){
+  const wd = workdays();
+  const rows = [['날짜','회사','공수','금액(원)','작업내용']];
+  const dates = Object.keys(wd).sort();
+  for(const ds of dates){
+    for(const item of (wd[ds].items||[])){
+      const co = getCo(item.companyId);
+      rows.push([ds, co?co.name:'알수없음', item.units, item.amount, item.note||'']);
+    }
+  }
+  // BOM 추가 → 엑셀에서 한글 깨짐 방지
+  const bom = '﻿';
+  const csv = bom + rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  downloadBlob(blob, `공수달력_${today().replace(/-/g,'')}.csv`);
+  showToast('CSV 파일이 저장됐어요 📊 엑셀에서 바로 열 수 있어요');
+}
+
+function restoreJSON(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try{
+        const data = JSON.parse(ev.target.result);
+        if(!data.companies || !data.workdays){
+          showToast('올바른 백업 파일이 아니에요'); return;
+        }
+        if(!confirm(`백업 날짜: ${data.exportDate||'알수없음'}\n\n현재 데이터를 이 파일로 덮어쓸까요?\n기존 데이터는 사라져요!`)) return;
+        saveCompanies(data.companies);
+        saveWorkdays(data.workdays);
+        savePayments(data.payments||{});
+        showToast('복원 완료! 잠시 후 새로고침됩니다');
+        setTimeout(()=>location.reload(), 1800);
+      } catch(err){
+        showToast('파일을 읽을 수 없어요. JSON 파일인지 확인해주세요');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+  input.click();
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ===================== TODAY & CHART =====================
+function goToday(){
+  const now = new Date();
+  curYear = now.getFullYear();
+  curMon  = now.getMonth();
+  if(isYearView) toggleYearView();
+  else renderCal();
+}
+
+function fmtShort(n){
+  if(n>=100000000) return (n/100000000).toFixed(1)+'억';
+  if(n>=10000000)  return (n/10000000).toFixed(0)+'천만';
+  if(n>=1000000)   return (n/1000000).toFixed(0)+'백만';
+  if(n>=10000)     return (n/10000).toFixed(0)+'만';
+  return fmt(n);
+}
+
+function renderLineChart(){
+  const wd = workdays();
+  const now = new Date();
+  const todayY = now.getFullYear(), todayM = now.getMonth();
+
+  const months = [];
+  for(let m=0;m<12;m++){
+    const prefix = `${curYearView}-${p2(m+1)}-`;
+    let gross=0;
+    for(const[ds,day] of Object.entries(wd)){
+      if(!ds.startsWith(prefix)) continue;
+      for(const item of (day.items||[])) gross += item.amount;
+    }
+    months.push({m, label:`${m+1}월`, gross, isCur: curYearView===todayY && m===todayM});
+  }
+
+  const W=340, H=120, pL=42, pR=8, pT=14, pB=28;
+  const cW=W-pL-pR, cH=H-pT-pB;
+  const maxG = Math.max(...months.map(d=>d.gross), 1);
+
+  const x = i => pL + (i/11)*cW;
+  const y = v => pT + cH - (v/maxG)*cH;
+
+  // Y 그리드 라인 (4개)
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  for(let i=0;i<=3;i++){
+    const gy = pT + (cH/3)*i;
+    const gv = maxG*(1-i/3);
+    svg += `<line x1="${pL}" y1="${gy.toFixed(1)}" x2="${W-pR}" y2="${gy.toFixed(1)}" stroke="#f0f0f0" stroke-width="1"/>`;
+    svg += `<text x="${pL-4}" y="${(gy+3).toFixed(1)}" text-anchor="end" font-size="7.5" fill="#bbb">${fmtShort(gv)}</text>`;
+  }
+
+  // 영역 채우기
+  const lineD = months.map((d,i)=>`${i===0?'M':'L'}${x(i).toFixed(1)},${y(d.gross).toFixed(1)}`).join(' ');
+  const areaD = `${lineD} L${x(11).toFixed(1)},${(pT+cH).toFixed(1)} L${x(0).toFixed(1)},${(pT+cH).toFixed(1)} Z`;
+  svg += `<path d="${areaD}" fill="#1565C0" fill-opacity="0.07"/>`;
+
+  // 선
+  svg += `<path d="${lineD}" fill="none" stroke="#1565C0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  // 점 + 월 라벨
+  for(let i=0;i<12;i++){
+    const d = months[i];
+    const cx = x(i).toFixed(1), cy = y(d.gross).toFixed(1);
+    const dotColor = d.isCur ? '#43a047' : (d.gross>0 ? '#1565C0' : '#ddd');
+    const r = d.isCur ? 5 : (d.gross>0 ? 3.5 : 2.5);
+    svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${dotColor}" stroke="#fff" stroke-width="1.5"/>`;
+    // 금액 라벨 (데이터 있는 달만)
+    if(d.gross>0){
+      const labelY = (parseFloat(cy)-8).toFixed(1);
+      svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="7" fill="#1565C0" font-weight="700">${fmtShort(d.gross)}</text>`;
+    }
+    // 월 라벨
+    svg += `<text x="${cx}" y="${H-pB+13}" text-anchor="middle" font-size="8" fill="${d.isCur?'#1565C0':'#aaa'}" font-weight="${d.isCur?'700':'400'}">${d.label}</text>`;
+  }
+
+  svg += '</svg>';
+  document.getElementById('yr-chart').innerHTML = `<div class="yr-chart-title">${curYearView}년 월별 수입 흐름</div>${svg}`;
+}
+
+// ===================== YEARLY VIEW =====================
+let isYearView = false;
+let curYearView = new Date().getFullYear();
+
+function toggleYearView(){
+  isYearView = !isYearView;
+  document.getElementById('monthly-view').style.display = isYearView ? 'none' : 'block';
+  document.getElementById('yearly-view').style.display  = isYearView ? 'block' : 'none';
+  document.getElementById('hdr-prev').style.visibility  = isYearView ? 'hidden' : 'visible';
+  document.getElementById('hdr-next').style.visibility  = isYearView ? 'hidden' : 'visible';
+  document.getElementById('yr-toggle-btn').style.background = isYearView ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.2)';
+  document.getElementById('yr-toggle-btn').style.color = isYearView ? '#1565C0' : '#fff';
+  if(isYearView){
+    curYearView = curYear;
+    renderYearView();
+    document.getElementById('mo-title').textContent = `${curYearView}년`;
+  } else {
+    renderCal();
+  }
+}
+
+function prevYear(){
+  curYearView--;
+  renderYearView();
+  document.getElementById('mo-title').textContent = `${curYearView}년`;
+}
+function nextYear(){
+  curYearView++;
+  renderYearView();
+  document.getElementById('mo-title').textContent = `${curYearView}년`;
+}
+
+function renderYearView(){
+  const wd = workdays();
+  const todayMon = new Date().getMonth();
+  const todayYr  = new Date().getFullYear();
+
+  let totalGross = 0, totalUnits = 0;
+  let html = '';
+
+  for(let m=0; m<12; m++){
+    let mGross=0, mUnits=0;
+    // 해당 월 전체 데이터 합산
+    const prefix = `${curYearView}-${p2(m+1)}-`;
+    for(const [ds, day] of Object.entries(wd)){
+      if(!ds.startsWith(prefix)) continue;
+      for(const item of (day.items||[])){
+        mGross += item.amount;
+        mUnits += item.units;
+      }
+    }
+    totalGross += mGross;
+    totalUnits += mUnits;
+
+    const isCur = m===todayMon && curYearView===todayYr;
+    const hasData = mGross > 0;
+    const cls = `yr-cell${isCur?' cur-month':''}${hasData&&!isCur?' has-data':''}`;
+
+    html += `<div class="${cls}" onclick="goToMonth(${m})">
+      <div class="ym">${m+1}월</div>
+      ${hasData
+        ? `<div class="yu">${mUnits.toFixed(1)}공수</div><div class="ya">${fmt(mGross)}원</div>`
+        : `<div class="yempty">기록 없음</div>`
+      }
+    </div>`;
+  }
+
+  document.getElementById('yr-title').textContent = `${curYearView}년`;
+  document.getElementById('yr-grid').innerHTML = html;
+  renderLineChart();
+  document.getElementById('yr-summary').innerHTML = `
+    <div class="item"><div class="lbl">${curYearView}년 총 공수</div><div class="val">${totalUnits.toFixed(1)}</div></div>
+    <div class="item"><div class="lbl">${curYearView}년 총 수입</div><div class="val">${fmt(totalGross)}원</div></div>
+  `;
+}
+
+function goToMonth(m){
+  curYear = curYearView;
+  curMon = m;
+  isYearView = false;
+  document.getElementById('monthly-view').style.display = 'block';
+  document.getElementById('yearly-view').style.display  = 'none';
+  document.getElementById('hdr-prev').style.visibility  = 'visible';
+  document.getElementById('hdr-next').style.visibility  = 'visible';
+  document.getElementById('yr-toggle-btn').style.background = 'rgba(255,255,255,.2)';
+  document.getElementById('yr-toggle-btn').style.color = '#fff';
+  renderCal();
+}
+
+// ===================== INIT =====================
+renderCal();
+</script>
+</body>
+</html>
